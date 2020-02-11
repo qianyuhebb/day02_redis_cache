@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis-org//DTD Mapper 3.0 //EN"
+        "http://mybatis-org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qianfeng.dao.PermissionDao">
+
+    <select id="queryPermsByusername" parameterType="String" resultType="string">
+        select distinct tp.permission_name from t_user
+        join t_user_role  on t_user.id = t_user_role.user_id
+        join t_role on t_user_role.role_id = t_role.id
+        join t_role_permission trp on t_role.id = trp.role_id
+        join t_permission tp on trp.permission_id = tp.id
+        where t_user.username =#{username}
+    </select>
+</mapper>

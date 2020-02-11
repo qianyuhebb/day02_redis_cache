@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+<!--连接池配置-->
+<bean  id="redisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+     <!--最多空闲连接数-->
+    <property name="maxIdle" value="1"/>
+      <!--最大连接数-->
+    <property name="maxTotal" value="5"/>
+    <!--最小空闲数-->
+    <property name="minIdle" value="1"/>
+    <!--连接数用完时，是否阻塞，阻塞超时会抛出异常-->
+    <property name="blockWhenExhausted" value="true"/>
+      <!--检出连接的时候，最大等待时间-->
+    <property name="maxWaitMillis" value="30000"/>
+    <!--检出是是否检测-->
+    <property name="testOnBorrow" value="false"/>
+    <!--空闲时检测连接是否可以使用-->
+    <property name="testWhileIdle" value="false"/>
+    <!--连接过了最少空间多久会成为可以被驱逐的-->
+    <property name="minEvictableIdleTimeMillis" value="60000"/>
+    <!--驱逐线程，两次驱逐的时间最小空闲时间，如果小于零，则不会有驱逐线程。则minEvictableIdleTimeMillis
+      无效-->
+    <property name="timeBetweenEvictionRunsMillis" value="18000"/>
+    <!--驱逐线程做的每次扫描几个连接-->
+    <property name="numTestsPerEvictionRun" value="3"/>
+    <!--last in  first out 检出策略，先入先出-->
+    <property name="lifo" value="true"/>
+</bean>
+
+    <!--连接工厂配置-->
+    <bean id="redisConnectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+          <!--redis 主机-->
+        <property name="hostName" value="192.168.25.128"/>
+        <!--redis port-->
+        <property name="port" value="8000"/>
+        <!--redis 连接配置-->
+        <property name="poolConfig" ref="redisPoolConfig"/>
+    </bean>
+
+    <!--如果没有设置序列化组件，则使用默认的defaultserializer申明序列化组件-->
+    <bean id="ss" class="org.springframework.data.redis.serializer.StringRedisSerializer"/>
+
+    <bean id="jackson" class="org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer"/>
+
+    <bean id="fast" class="com.alibaba.fastjson.support.spring.GenericFastJsonRedisSerializer"/>
+
+
+
+
+    <!--redisTemplaite
+        key 使用的序列化组件  p:keySerializer-ref="redisSerializer"
+        value 使用的序列化组件     p:valueSerializer="fastjson"
+        hash上面的小key  使用的序列化组件  p:hashKeySerializer-ref="redisSerializer"
+        hash上面的value 使用的序列化组件 p:hashValueSerializer-ref="fastjson"
+        append 的string value 使用的序列化组件  p:stringSerializer-ref="redisSerializer"
+         供两个缓存使用（mybatis和shiro）
+     -->
+    <bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate"
+          p:connectionFactory-ref="redisConnectionFactory"
+
+          p:keySerializer-ref="ss"
+          p:hashKeySerializer-ref="ss"
+          p:hashValueSerializer-ref="fast"
+          p:stringSerializer-ref="ss"
+          p:valueSerializer-ref="fast"
+
+     />
+    <!--供session专门使用，value使用的是jdk默认的序列化方法-->
+    <bean id="redisTemplate2" class="org.springframework.data.redis.core.RedisTemplate"
+          p:connectionFactory-ref="redisConnectionFactory"
+          p:keySerializer-ref="ss"
+    />
+
+</beans>

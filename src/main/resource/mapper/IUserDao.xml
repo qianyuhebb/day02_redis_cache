@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qianfeng.dao.IUserDao">
+    <!--开启user支持二级缓存  默认使用PerpetualCache-->
+<!--    <cache type="org.apache.ibatis.cache.impl.PerpetualCache" />-->
+    <cache type="com.qianfeng.cache.MyCache" />
+    <select id="queryUserByUsername" parameterType="String" resultType="User">
+        select * from t_user where username =#{username}
+    </select>
+
+    <!-- 查询所有 -->
+    <select id="selectAllUser" resultType="User">
+        select * from t_user
+    </select>
+
+    <!-- 根据id查询用户 -->
+    <select id="findById" parameterType="INT" resultType="User" useCache="true">
+        select * from t_user where id = #{uid}
+    </select>
+
+    <!-- 更新用户信息-->
+    <update id="insertUser" parameterType="User">
+        insert into t_user (username,password,salt)values
+                (#{username},#{password},#{salt})
+    </update>
+</mapper>

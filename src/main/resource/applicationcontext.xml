@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+  <context:property-placeholder location="classpath:jdbcConfig.properties"/>
+
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+      <property name="url" value="${jdbc.url}"/>
+      <property name="username" value="${jdbc.username}"/>
+      <property name="password" value="${jdbc.password}"/>
+
+      <!--配置初始化大小，最大，最小-->
+      <property name="initialSize" value="1"/>
+      <property name="minIdle" value="1"/>
+      <property name="maxActive" value="100"/>
+      <!--连接等待的超时时间-->
+      <property name="maxWait" value="3000"/>
+      <!--配置间隔多久进行一次检测，检测需要关闭的空闲连接，单位是毫秒-->
+      <property name="timeBetweenEvictionRunsMillis" value="60000"/>
+
+    </bean>
+
+  <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+   <!--连接池，mapper文件的注册，别名，插件等配置-->
+    <property name="dataSource" ref="dataSource" />
+    <property name="mapperLocations" >
+      <array>
+          <value>
+            classpath:mapper/*.xml
+          </value>
+      </array>
+    </property>
+    <property name="typeAliasesPackage" value="com.qianfeng.pojo"/>
+  </bean>
+
+  <!--配置Dao接口所在包,找到接口，并且根据sqlSessionFactory创建dao的实现类，然后将对象纳入工厂-->
+  <bean id="mapperScanner" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+    <property name="basePackage" value="com.qianfeng.dao"/>
+    <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+  </bean>
+
+
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+    <context:annotation-config/>
+    <context:property-placeholder location="classpath:jdbcConfig.properties"/>
+    <!--开启注解的扫描，希望处理service和dao，controller不需要Spring框架去处理-->
+    <context:component-scan base-package="com.qianfeng" >
+        <!--配置哪些注解不扫描-->
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+    </context:component-scan>
+
+    <!--导入redis相关的组件-->
+    <import resource="application_redis.xml"/>
+    <import resource="shiro_applicationContext.xml"/>
+</beans>

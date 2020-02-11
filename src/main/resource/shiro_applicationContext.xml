@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+   <!--shiro 的配置-->
+
+    <!--realm的注解-->
+    <bean id="myRealm" class="com.qianfeng.realm.MyRealm">
+       <property name="userService" ref="userServiceImpl"/>
+
+       <property name="roleService" ref="roleServiceImpl"/>
+       <property name="permissionService" ref="permissionServiceImpl"/>
+         <!--注入密码比对器-->
+        <property name="credentialsMatcher">
+            <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+                <property name="hashAlgorithmName" value="sha-256"/>
+                <property name="hashIterations" value="10000"/>
+                <property name="storedCredentialsHexEncoded" value="false"/>
+            </bean>
+        </property>
+    </bean>
+
+    <!--配置securityManager-->
+    <bean  id ="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+         <property name="realm" ref="myRealm"/>
+          <!--注册缓存管理器-->
+        <property name="cacheManager" ref="cacheManager"/>
+         <property name="rememberMeManager" ref="rememberMeManager"/>
+        <!--注册session管理器-->
+        <property name="sessionManager" ref="sessionManager"/>
+    </bean>
+
+    <!--配置shiro 过滤器-->
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+       <property name="securityManager" ref="securityManager"/>
+<!--        <property name="loginUrl" value="/user/login"/>-->
+<!--        <property name="unauthorizedUrl" value="/user/perms/error"/>-->
+
+       <!-- <property name="filterChainDefinitions">
+            <value>
+                /user/all = authc
+                /user/login/page = anon
+                /user/login/logic = anon
+                /user/query = authc
+                /user/update = authc ,roles["manager","seller"]
+                /user/delete = authc,perms["user:update","user:delete"]
+                /user/logout = logout
+            </value>
+        </property>-->
+    </bean>
+
+    <!--配置记住我的cookie-->
+    <bean id="rememberMeCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+        <property name="name" value="rememberMe"/>
+        <property name="httpOnly" value="true"/>
+        <property name="maxAge" value="604800"/>
+    </bean>
+    <bean id="rememberMeManager" class="org.apache.shiro.web.mgt.CookieRememberMeManager">
+         <property name="cookie" ref="rememberMeCookie"/>
+    </bean>
+
+    <bean id="sessionIdCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+        <property name="name" value="JSESSIONID"/>
+        <property name="httpOnly" value="true"/>
+        <property name="maxAge" value="-1"/>
+    </bean>
+    <bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+        <property name="sessionIdCookie" ref="sessionIdCookie"/>
+        <property name="globalSessionTimeout" value="10000"/>
+        <property name="sessionListeners" >
+            <list>
+                <bean class="com.qianfeng.session.MySessionListener"/>
+            </list>
+        </property>
+        <property name="sessionValidationSchedulerEnabled" value="true"/>
+        <property name="sessionValidationInterval" value="10000"/>
+      <!--注意，redisTemplate key 的序列化采用string的方式
+                             value没有使用Jackson和fastjson序列化，使用的是jdk默认的序列化方式
+                    jdk回调writeObject和readObject完成序列化和反序列化
+      -->
+        <property name="sessionDAO">
+            <bean class="com.qianfeng.session.MySessionDao">
+                <property name="template" ref="redisTemplate2"/>
+            </bean>
+        </property>
+    </bean>
+    <!--配置shiro缓存到redis的管理器-->
+
+    <bean id="cacheManager" class="com.qianfeng.cache.MyShiroCacheManager">
+        <property name="template" ref="redisTemplate"/>
+    </bean>
+</beans>
